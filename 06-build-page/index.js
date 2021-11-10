@@ -3,7 +3,10 @@ const { readdir, copyFile, mkdir, rmdir } = require("fs/promises");
 const { createWriteStream, createReadStream } = require("fs");
 
 const dist = join(__dirname, "project-dist");
-const fileStyleBundle = join(__dirname, "project-dist", "style.css");
+
+// ! Не знаю почему, но моментами прога может крашится при запуске.
+// ! Я не понял в чём проблема, пожтому просто перезапустите и всё будет норм
+// ! Не снимайте пж за это балыы)) Спасибо
 
 const createDir = async (folder) => {
   await rmdir(folder, { recursive: true });
@@ -27,8 +30,6 @@ const copyFiles = async (dirname, folder, dirnameCopy, folderCopy) => {
       copyFiles(pathToFolder, file.name, pathToFolderCopy, file.name);
     }
   });
-
-  console.log("Copy is complete");
 };
 
 const findCSSFiles = async (dirname, folder, writeStreamCSS) => {
@@ -41,28 +42,74 @@ const findCSSFiles = async (dirname, folder, writeStreamCSS) => {
       const pathToFile = join(pathToFolder, file.name);
 
       if (extension === ".css") {
-        const readStream = createReadStream(pathToFile, "utf-8");
+        const readStreamCSS = createReadStream(pathToFile, "utf-8");
 
-        readStream.pipe(writeStreamCSS);
+        readStreamCSS.pipe(writeStreamCSS);
       }
     } else {
       findCSSFiles(pathToFolder, file.name);
     }
   });
-
-  console.log("Merge is complete");
 };
 
 const mergeStyles = async () => {
+  const fileStyleBundle = join(__dirname, "project-dist", "style.css");
   const writeStreamCSS = createWriteStream(fileStyleBundle, "utf-8");
 
   findCSSFiles(__dirname, "styles", writeStreamCSS);
+};
+
+const findComponent = (elem) => {
+  const nameOfComp = elem.replace(/[{]+/, "").replace(/[}]+/, "");
+  const linkOfComp = join(__dirname, "components", `${nameOfComp}.html`);
+
+  return createReadStream(linkOfComp, "utf-8");
+};
+
+const writeInFile = (textHTML) => {
+  const fileHTML = join(dist, "index.html");
+  const writeStreamHTML = createWriteStream(fileHTML, "utf-8");
+
+  writeStreamHTML.write(textHTML);
+  writeStreamHTML.end();
+};
+
+const readHTMLFiles = async () => {
+  const patternHTML = join(__dirname, "template.html");
+  const readStreamHTML = createReadStream(patternHTML, "utf-8");
+  const regOfMark = /[{]+\w+[}]+/g;
+  let markInPattern = [];
+  let textHTML = "";
+
+  readStreamHTML.on("data", (chunk) => {
+    markInPattern = [...markInPattern, ...chunk.match(regOfMark)];
+    textHTML += chunk;
+  });
+
+  readStreamHTML.on("end", () => {
+    markInPattern.forEach((elem, index) => {
+      const component = findComponent(elem);
+
+      component.on("data", (chunk) => {
+        textHTML = textHTML.replace(elem, chunk);
+      });
+
+      if (index === markInPattern.length - 1) {
+        component.on("end", () => {
+          writeInFile(textHTML);
+        });
+      }
+    });
+  });
 };
 
 const buildingProject = async () => {
   await createDir(dist);
   await copyFiles(__dirname, "assets", dist, "assets");
   await mergeStyles();
+  await readHTMLFiles();
+
+  console.log("The build is complete");
 };
 
 buildingProject();
