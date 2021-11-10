@@ -2,7 +2,6 @@ const path = require("path");
 const fs = require("fs");
 
 let pathToFolder = "./secret-folder";
-let newPathToFolder = pathToFolder;
 let pathToFile;
 let names;
 
@@ -27,9 +26,6 @@ const getInfoOfFiles = (names, pathTo) => {
 
       pathToFile = path.join(__dirname, pathTo, nameOfFile);
       getSizeOfFile(pathToFile, basename, extension);
-    } else {
-      newPathToFolder += `/${name.name}`;
-      readDir(newPathToFolder);
     }
   });
 };
