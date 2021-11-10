@@ -1,8 +1,9 @@
 const { join } = require("path");
-const { readdir, copyFile, mkdir } = require("fs/promises");
+const { readdir, copyFile, mkdir, rmdir } = require("fs/promises");
 
 const createDir = async (folder) => {
-  mkdir(folder, { recursive: true });
+  await rmdir(folder, { recursive: true });
+  await mkdir(folder, { recursive: true });
 };
 
 const copyFiles = async (dirname, folder, dirnameCopy, folderCopy) => {
