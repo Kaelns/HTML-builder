@@ -1,15 +1,11 @@
 const { join, extname } = require("path");
-const { readdir, copyFile, mkdir, rmdir } = require("fs/promises");
+const { readdir, copyFile, mkdir, rm } = require("fs/promises");
 const { createWriteStream, createReadStream } = require("fs");
 
 const dist = join(__dirname, "project-dist");
 
-// ! Не знаю почему, но моментами прога может крашится при запуске.
-// ! Я не понял в чём проблема, пожтому просто перезапустите и всё будет норм
-// ! Не снимайте пж за это балыы)) Спасибо
-
 const createDir = async (folder) => {
-  await rmdir(folder, { recursive: true });
+  await rm(folder, { recursive: true, force: true });
   await mkdir(folder, { recursive: true });
 };
 
